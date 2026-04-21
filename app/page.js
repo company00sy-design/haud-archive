@@ -250,6 +250,7 @@ export default function HaudArchiveApp() {
         })}
       </div>
 
+
       {/* 이미지 슬라이더 모달 */}
       {modalData.isOpen && (
         <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center animate-in fade-in duration-200" onClick={closeModal}>
@@ -265,3 +266,4 @@ export default function HaudArchiveApp() {
     </main>
   )
 }
+
