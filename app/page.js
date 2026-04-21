@@ -11,17 +11,16 @@ export default function HaudArchiveApp() {
   const [password, setPassword] = useState('')
   const [projects, setProjects] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // 수정 중인 데이터와 ID를 따로 관리
   const [editingId, setEditingId] = useState(null)
   const [editData, setEditData] = useState({})
+  
   const [modalData, setModalData] = useState({ isOpen: false, images: [], currentIndex: 0 })
 
   const [formData, setFormData] = useState({
     work_date: new Date().toISOString().split('T')[0],
-    customer_name: '',
-    manager: '', 
-    product_name: '', 
-    tags: '',
-    as_note: ''
+    customer_name: '', manager: '', product_name: '', tags: '', as_note: ''
   })
 
   const checkUser = async () => {
@@ -42,13 +41,13 @@ export default function HaudArchiveApp() {
       if (!isAdmin) query = query.eq('installer_id', user.id)
       const { data, error } = await query
       if (!error) setProjects(data || [])
-    } catch (err) { console.error("데이터 로드 실패:", err) }
+    } catch (err) { console.error(err) }
   }
 
   const handleLogin = async (e) => {
     e.preventDefault()
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) alert('로그인 실패: ' + error.message)
+    if (error) alert('로그인 실패')
     else {
       setUser(data.user)
       const role = data.user.user_metadata?.role || data.user.app_metadata?.role
@@ -81,7 +80,6 @@ export default function HaudArchiveApp() {
     try {
       const afterUrls = await uploadImages(document.getElementById('after_imgs')?.files, 'after')
       const asUrls = await uploadImages(document.getElementById('as_imgs')?.files, 'as')
-      
       const { error } = await supabase.from('projects').insert([{
         ...formData,
         installer_id: user.id,
@@ -90,22 +88,23 @@ export default function HaudArchiveApp() {
         as_urls: asUrls
       }])
       if (error) throw error
-      alert('기록 완료! 상세 정보는 사무직에서 업데이트 예정입니다.')
+      alert('등록 완료!')
       setFormData({work_date: new Date().toISOString().split('T')[0], customer_name: '', manager: '', product_name: '', tags: '', as_note: ''})
       fetchProjects()
-    } catch (err) { alert('등록 실패: 데이터베이스 설정을 확인하세요.') }
+    } catch (err) { alert('등록 실패') }
     finally { setLoading(false) }
   }
 
+  // [수정 핵심] 수정 버튼을 눌렀을 때만 해당 카드의 데이터를 복사해옵니다.
   const startEdit = (project) => {
-    setEditingId(project.id)
-    setEditData({ ...project })
+    setEditingId(project.id);
+    setEditData({ ...project });
   }
 
   const saveEdit = async () => {
     const { error } = await supabase.from('projects').update(editData).eq('id', editingId)
     if (!error) {
-      alert('수정되었습니다.');
+      alert('업데이트 성공!');
       setEditingId(null);
       fetchProjects();
     }
@@ -125,18 +124,18 @@ export default function HaudArchiveApp() {
   if (!user) {
     return (
       <main className="max-w-md mx-auto p-10 flex flex-col justify-center min-h-screen">
-        <h1 className="text-4xl font-black text-blue-900 mb-8 uppercase italic text-center italic tracking-tighter">hAUD ARCHIVE</h1>
+        <h1 className="text-4xl font-black text-blue-900 mb-8 uppercase italic text-center tracking-tighter">hAUD ARCHIVE</h1>
         <form onSubmit={handleLogin} className="space-y-4">
-          <input type="email" placeholder="이메일" className="w-full p-4 border rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-100" onChange={e => setEmail(e.target.value)} />
-          <input type="password" placeholder="비밀번호" className="w-full p-4 border rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-100" onChange={e => setPassword(e.target.value)} />
-          <button className="w-full bg-blue-900 text-white p-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-100 active:scale-95 transition-all">로그인</button>
+          <input type="email" placeholder="이메일" className="w-full p-4 border rounded-2xl bg-gray-50 outline-none" onChange={e => setEmail(e.target.value)} />
+          <input type="password" placeholder="비밀번호" className="w-full p-4 border rounded-2xl bg-gray-50 outline-none" onChange={e => setPassword(e.target.value)} />
+          <button className="w-full bg-blue-900 text-white p-5 rounded-2xl font-black text-lg">로그인</button>
         </form>
       </main>
     )
   }
 
   return (
-    <main className="max-w-5xl mx-auto p-4 md:p-10 bg-gray-50 min-h-screen pb-20 font-sans text-gray-900 transition-all">
+    <main className="max-w-6xl mx-auto p-4 md:p-10 bg-gray-50 min-h-screen pb-20 font-sans text-gray-900 transition-all">
       <header className="flex justify-between items-end mb-10 py-4 border-b-2 border-gray-100 px-2">
         <div>
           <h1 className="text-3xl font-black text-blue-900 leading-none uppercase italic tracking-tighter">hAUD ARCHIVE</h1>
@@ -144,112 +143,81 @@ export default function HaudArchiveApp() {
              {isAdmin ? '내근직원(관리자) 모드' : `${user.email.split('@')[0]} 기사님 모드`}
           </p>
         </div>
-        <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest pb-1 border-b border-gray-200">Logout</button>
+        <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest pb-1 border-b">Logout</button>
       </header>
 
-      {/* 요약 대시보드 */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 px-2">
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-white">
-          <p className="text-[10px] font-black text-gray-300 uppercase mb-1">총 시공</p>
-          <p className="text-3xl font-black text-blue-900">{projects.length}<span className="text-sm ml-1 font-medium italic text-gray-400">건</span></p>
-        </div>
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-white">
-          <p className="text-[10px] font-black text-gray-300 uppercase mb-1">AS 발생</p>
-          <p className="text-3xl font-black text-red-600">{projects.filter(p => p.as_note).length}<span className="text-sm ml-1 font-medium italic text-red-300">건</span></p>
-        </div>
-        {isAdmin && (
-          <>
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-white">
-              <p className="text-[10px] font-black text-gray-300 uppercase mb-1">활동 기사</p>
-              <p className="text-3xl font-black text-green-600">{new Set(projects.map(p => p.installer_name)).size}<span className="text-sm ml-1">명</span></p>
-            </div>
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-white">
-              <p className="text-[10px] font-black text-gray-300 uppercase mb-1">최근 업데이트</p>
-              <p className="text-xl font-black text-gray-800 mt-2">{projects[0]?.work_date.split('-').slice(1).join('/') || '-'}</p>
-            </div>
-          </>
-        )}
-      </section>
-
-      {/* 등록 섹션 - 기사님 모드에서 간소화됨 */}
-      <details className="bg-white p-6 rounded-[2.5rem] shadow-xl mb-12 border-2 border-blue-50 overflow-hidden mx-2 transition-all">
+      {/* 시공 등록 섹션 */}
+      <details className="bg-white p-6 rounded-[2.5rem] shadow-xl mb-12 border-2 border-blue-50 overflow-hidden mx-2">
         <summary className="font-bold text-blue-900 cursor-pointer list-none flex justify-between items-center py-2 px-2 focus:outline-none">
           <div className="flex items-center gap-3">
             <span className="text-2xl">➕</span>
             <span className="text-lg font-black tracking-tight">새 시공 기록 등록</span>
           </div>
-          <span className="bg-blue-50 px-4 py-2 rounded-full text-blue-900 text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors">Open</span>
+          <span className="bg-blue-50 px-4 py-2 rounded-full text-blue-900 text-[10px] font-black uppercase tracking-widest">Open</span>
         </summary>
         <form onSubmit={handleSubmit} className="mt-8 space-y-6 pt-8 border-t border-gray-100 text-left px-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-[11px] font-black text-gray-400 ml-2 uppercase tracking-widest">시공 일자</label>
-              <input type="date" value={formData.work_date} className="p-4 border-none rounded-2xl bg-gray-50 font-bold focus:ring-2 focus:ring-blue-100 outline-none" onChange={e => setFormData({...formData, work_date: e.target.value})} />
+            <input type="date" value={formData.work_date} className="p-4 border-none rounded-2xl bg-gray-50 font-bold outline-none" onChange={e => setFormData({...formData, work_date: e.target.value})} />
+            <input type="text" placeholder="고객명 (현장명)" value={formData.customer_name} className="p-4 border-none rounded-2xl bg-gray-50 font-bold outline-none" onChange={e => setFormData({...formData, customer_name: e.target.value})} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+            <div className="p-6 bg-blue-50/50 rounded-[2rem] border-2 border-dashed border-blue-100">
+              <p className="text-[11px] font-black text-blue-800 mb-3 uppercase">📸 완료 사진 (필수)</p>
+              <input type="file" id="after_imgs" multiple accept="image/*" className="text-[10px] w-full" />
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-[11px] font-black text-gray-400 ml-2 uppercase tracking-widest">고객명 (현장명)</label>
-              <input type="text" placeholder="예: 덕소아이파크 102동" value={formData.customer_name} className="p-4 border-none rounded-2xl bg-gray-50 font-bold focus:ring-2 focus:ring-blue-100 outline-none" onChange={e => setFormData({...formData, customer_name: e.target.value})} />
+            <div className="p-6 bg-red-50/50 rounded-[2rem] border-2 border-dashed border-red-100">
+              <p className="text-[11px] font-black text-red-800 mb-3 uppercase">📸 AS 사진 (선택)</p>
+              <input type="file" id="as_imgs" multiple accept="image/*" className="text-[10px] w-full" />
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-8 bg-blue-50/50 rounded-[2rem] border-2 border-dashed border-blue-100 text-center group hover:bg-blue-50 transition-colors">
-              <p className="text-[11px] font-black text-blue-800 mb-3 uppercase tracking-tighter">📸 완료 사진 (필수)</p>
-              <input type="file" id="after_imgs" multiple accept="image/*" className="text-[10px] w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-900 file:text-white" />
-            </div>
-            <div className="p-8 bg-red-50/50 rounded-[2rem] border-2 border-dashed border-red-100 text-center group hover:bg-red-50 transition-colors">
-              <p className="text-[11px] font-black text-red-800 mb-3 uppercase tracking-tighter">📸 AS 사진 (선택)</p>
-              <input type="file" id="as_imgs" multiple accept="image/*" className="text-[10px] w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-red-900 file:text-white" />
-            </div>
-          </div>
-          <textarea placeholder="특이사항이나 AS 내용을 입력하세요" className="w-full p-5 border-none rounded-[2rem] bg-gray-50 h-32 outline-none focus:ring-2 focus:ring-blue-100 text-sm font-medium" onChange={e => setFormData({...formData, as_note: e.target.value})} />
-          <button type="submit" disabled={loading} className="w-full bg-blue-900 text-white p-6 rounded-[2rem] font-black text-xl shadow-2xl shadow-blue-100 active:scale-[0.98] transition-all">
-            {loading ? '데이터 업로드 중...' : '시공 데이터 기록 완료'}
+          <textarea placeholder="기사님 전달사항 / AS 메모" className="w-full p-5 border-none rounded-[2rem] bg-gray-50 h-32 outline-none text-sm" onChange={e => setFormData({...formData, as_note: e.target.value})} />
+          <button type="submit" disabled={loading} className="w-full bg-blue-900 text-white p-6 rounded-[2rem] font-black text-xl shadow-2xl active:scale-95 transition-all">
+            {loading ? '기록 중...' : '시공 데이터 기록 완료'}
           </button>
         </form>
       </details>
 
       {/* 검색 바 */}
       <div className="mb-12 relative px-2">
-        <input type="text" placeholder="고객명, 제품명, 담당자 이름으로 검색..." className="w-full p-5 pl-14 rounded-[2rem] border-none shadow-sm text-sm focus:ring-2 focus:ring-blue-200 outline-none bg-white" onChange={e => setSearchTerm(e.target.value)} />
-        <span className="absolute left-7 top-6 text-gray-300 text-xl">🔍</span>
+        <input type="text" placeholder="고객명, 제품명, 담당자 이름 검색..." className="w-full p-5 pl-12 rounded-[2rem] border-none shadow-sm text-sm outline-none bg-white" onChange={e => setSearchTerm(e.target.value)} />
+        <span className="absolute left-6 top-5 text-gray-300">🔍</span>
       </div>
 
       {/* 리스트 그리드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2 items-stretch">
         {filteredProjects.map((p) => {
           const isEditing = editingId === p.id;
           const allImages = [...(p.after_urls || []), ...(p.as_urls || [])];
           return (
-            <div key={p.id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-white hover:border-blue-100 hover:shadow-xl transition-all flex flex-col h-full group relative">
+            <div key={p.id} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-white flex flex-col h-full group hover:shadow-xl transition-all relative">
               <div className="flex justify-between items-start mb-6">
                 <div className="flex-1">
-                  <span className="text-[10px] font-black text-blue-300 tracking-[0.2em] uppercase">{p.work_date}</span>
+                  <span className="text-[10px] font-black text-blue-300 tracking-widest uppercase">{p.work_date}</span>
                   {isEditing ? (
-                    <input className="w-full text-2xl font-black mt-1 p-2 border-b-2 border-blue-500 outline-none bg-blue-50/20 rounded" value={editData.customer_name} onChange={e => setEditData({...editData, customer_name: e.target.value})} />
+                    <input className="w-full text-2xl font-black mt-1 p-2 bg-blue-50/50 border-b-2 border-blue-600 outline-none rounded" value={editData.customer_name} onChange={e => setEditData({...editData, customer_name: e.target.value})} />
                   ) : (
-                    <h3 className="font-black text-gray-900 text-2xl mt-1 leading-tight tracking-tighter group-hover:text-blue-900 transition-colors uppercase">{p.customer_name || '미등록 현장'}</h3>
+                    <h3 className="font-black text-gray-900 text-2xl mt-1 tracking-tighter group-hover:text-blue-900 transition-colors uppercase">{p.customer_name || '미등록 현장'}</h3>
                   )}
-                  
                   <div className="flex flex-wrap items-center gap-2 mt-3">
-                     <span className="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-100">영업: {p.manager || '대기중'}</span>
+                     <span className="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">영업: {p.manager || '미지정'}</span>
                      <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase border border-blue-100">기사: {p.installer_name?.split('@')[0]}</span>
                   </div>
                 </div>
                 {isAdmin && !isEditing && (
-                  <button onClick={() => startEdit(p)} className="text-[10px] font-black bg-gray-100 px-3 py-1 rounded-full text-gray-400 hover:bg-blue-600 hover:text-white transition-all shadow-sm">EDIT</button>
+                  <button onClick={() => startEdit(p)} className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full hover:bg-blue-600 hover:text-white transition-all">EDIT</button>
                 )}
               </div>
 
+              {/* [수정 섹션] 수정 모드일 때만 보입니다 */}
               {isEditing ? (
-                <div className="space-y-3 my-6 p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100">
-                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest ml-1">사무실 전용 입력란</p>
-                  <input placeholder="제품명 (예: 무몰딩 붙박이)" className="w-full p-4 bg-white rounded-2xl text-sm border-none shadow-sm font-bold" value={editData.product_name || ''} onChange={e => setEditData({...editData, product_name: e.target.value})} />
+                <div className="space-y-3 my-4 p-5 bg-blue-50/30 rounded-[2rem] border border-blue-100">
+                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest ml-1 mb-2">사무실 전용 입력란</p>
+                  <input placeholder="제품명" className="w-full p-4 bg-white rounded-2xl text-sm border-none shadow-sm font-bold" value={editData.product_name || ''} onChange={e => setEditData({...editData, product_name: e.target.value})} />
                   <input placeholder="영업 담당자" className="w-full p-4 bg-white rounded-2xl text-sm border-none shadow-sm font-bold" value={editData.manager || ''} onChange={e => setEditData({...editData, manager: e.target.value})} />
-                  <input placeholder="태그 (쉼표로 구분)" className="w-full p-4 bg-white rounded-2xl text-sm border-none shadow-sm font-bold" value={editData.tags || ''} onChange={e => setEditData({...editData, tags: e.target.value})} />
+                  <input placeholder="태그 (쉼표 구분)" className="w-full p-4 bg-white rounded-2xl text-sm border-none shadow-sm font-bold" value={editData.tags || ''} onChange={e => setEditData({...editData, tags: e.target.value})} />
                   <div className="flex gap-2 pt-2">
-                    <button onClick={saveEdit} className="flex-1 bg-blue-900 text-white p-4 rounded-xl text-xs font-black shadow-lg shadow-blue-100">업데이트 저장</button>
-                    <button onClick={() => setEditingId(null)} className="flex-1 bg-white p-4 rounded-xl text-xs font-black text-gray-400 border border-gray-100">취소</button>
+                    <button onClick={saveEdit} className="flex-1 bg-blue-900 text-white p-4 rounded-xl text-xs font-black shadow-lg">저장</button>
+                    <button onClick={() => setEditingId(null)} className="flex-1 bg-gray-200 p-4 rounded-xl text-xs font-black text-gray-500">취소</button>
                   </div>
                 </div>
               ) : (
@@ -265,15 +233,15 @@ export default function HaudArchiveApp() {
                 </div>
               )}
               
-              <div className="flex gap-3 overflow-x-auto no-scrollbar py-3 mb-4">
+              <div className="flex gap-3 overflow-x-auto no-scrollbar py-2 mb-4">
                 {allImages.map((url, idx) => (
-                  <img key={idx} src={url} className="w-32 h-32 md:w-44 md:h-44 object-cover rounded-[2rem] border-4 border-gray-50 flex-shrink-0 shadow-sm hover:scale-105 cursor-zoom-in transition-transform" onClick={() => openModal(allImages, idx)} />
+                  <img key={idx} src={url} className="w-32 h-32 md:w-44 md:h-44 object-cover rounded-[1.8rem] border-4 border-gray-50 flex-shrink-0 shadow-sm hover:scale-105 transition-all cursor-pointer" onClick={() => openModal(allImages, idx)} />
                 ))}
               </div>
               
-              {p.as_note && (
+              {p.as_note && !isEditing && (
                 <div className="mt-auto p-5 bg-red-50/50 rounded-[1.8rem] border border-red-50 text-xs text-red-900 font-semibold leading-relaxed">
-                  <span className="font-black text-[9px] block mb-2 text-red-400 uppercase tracking-widest italic decoration-2 underline underline-offset-4">Installer Note</span>
+                  <span className="font-black text-[9px] block mb-1 text-red-400 uppercase tracking-widest italic decoration-2 underline underline-offset-4">Installer Note</span>
                   {p.as_note}
                 </div>
               )}
@@ -285,7 +253,7 @@ export default function HaudArchiveApp() {
       {/* 이미지 슬라이더 모달 */}
       {modalData.isOpen && (
         <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center animate-in fade-in duration-200" onClick={closeModal}>
-          <button className="absolute top-6 right-6 text-white text-4xl font-light" onClick={closeModal}>&times;</button>
+          <button className="absolute top-6 right-6 text-white text-4xl" onClick={closeModal}>&times;</button>
           <button className="absolute left-4 md:left-10 text-white/50 hover:text-white text-5xl p-2" onClick={prevImg}>&#8249;</button>
           <div className="max-w-[90%] max-h-[85%] flex flex-col items-center">
             <img src={modalData.images[modalData.currentIndex]} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
