@@ -69,7 +69,6 @@ export default function HaudArchiveApp() {
     return urls
   }
 
-  // [핵심] 등록 로직: 빈 값이라도 형식을 갖춰서 전송
   const handleSubmit = async (e) => {
     e.preventDefault()
     if(!formData.customer_name) return alert('현장명을 입력해주세요.');
@@ -81,6 +80,7 @@ export default function HaudArchiveApp() {
       const afterUrls = await uploadImages(afterFiles, 'after');
       const asUrls = await uploadImages(asFiles, 'as');
       
+      // JSON 규격에 맞춰 데이터를 깔끔하게 조립
       const { error } = await supabase.from('projects').insert([{
         work_date: formData.work_date,
         customer_name: formData.customer_name,
@@ -90,9 +90,8 @@ export default function HaudArchiveApp() {
         as_note: formData.as_note,
         installer_id: user.id,
         installer_name: user.email,
-        // 사진이 없으면 빈 배열 [] 로 JSON 형식을 맞춰줍니다.
-        after_urls: afterUrls.length > 0 ? afterUrls : [],
-        as_urls: asUrls.length > 0 ? asUrls : []
+        after_urls: afterUrls, // 빈 배열일 경우 [] 가 전송됨
+        as_urls: asUrls      // 빈 배열일 경우 [] 가 전송됨
       }])
 
       if (error) throw error
@@ -147,19 +146,19 @@ export default function HaudArchiveApp() {
 
   if (!user) {
     return (
-      <main className="max-w-md mx-auto p-10 flex flex-col justify-center min-h-screen bg-white">
-        <h1 className="text-4xl font-black text-blue-900 mb-8 uppercase italic text-center italic tracking-tighter">hAUD ARCHIVE</h1>
+      <main className="max-w-md mx-auto p-10 flex flex-col justify-center min-h-screen bg-white font-black italic tracking-tighter uppercase">
+        <h1 className="text-4xl text-blue-900 mb-8 text-center">hAUD ARCHIVE</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <input type="email" placeholder="Email" className="w-full p-4 border rounded-2xl bg-gray-50 outline-none" onChange={e => setEmail(e.target.value)} />
           <input type="password" placeholder="Password" className="w-full p-4 border rounded-2xl bg-gray-50 outline-none" onChange={e => setPassword(e.target.value)} />
-          <button className="w-full bg-blue-900 text-white p-5 rounded-2xl font-black text-lg">LOGIN</button>
+          <button className="w-full bg-blue-900 text-white p-5 rounded-2xl text-lg">LOGIN</button>
         </form>
       </main>
     )
   }
 
   return (
-    <main className="max-w-6xl mx-auto p-4 md:p-10 bg-gray-50 min-h-screen pb-20 font-sans text-gray-900 transition-all">
+    <main className="max-w-6xl mx-auto p-4 md:p-10 bg-gray-50 min-h-screen pb-20 font-sans text-gray-900">
       <header className="flex justify-between items-end mb-10 py-4 border-b-2 border-gray-100 px-2 font-black italic tracking-tighter">
         <div>
           <h1 className="text-3xl text-blue-900 uppercase">hAUD ARCHIVE</h1>
@@ -170,50 +169,49 @@ export default function HaudArchiveApp() {
         <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="text-[10px] text-gray-400 hover:text-red-500 uppercase tracking-widest pb-1 border-b">Logout</button>
       </header>
 
-      {/* 등록 섹션 */}
       <details className="bg-white p-6 rounded-[2.5rem] shadow-sm mb-12 border border-blue-50">
         <summary className="font-bold text-blue-900 cursor-pointer list-none flex justify-between items-center py-2 px-2 focus:outline-none uppercase italic font-black">
           <span className="text-lg">➕ REGISTER NEW CASE</span>
-          <span className="text-[10px] text-blue-500 tracking-widest uppercase">Open</span>
+          <span className="text-[10px] text-blue-500 tracking-widest">Open</span>
         </summary>
         <form onSubmit={handleSubmit} className="mt-8 space-y-6 pt-8 border-t border-gray-100 text-left px-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-black">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-black italic">
             <input type="date" value={formData.work_date} className="p-4 rounded-2xl bg-gray-50 outline-none border-none shadow-inner" onChange={e => setFormData({...formData, work_date: e.target.value})} />
-            <input type="text" placeholder="현장명 (고객명)" value={formData.customer_name} className="p-4 rounded-2xl bg-gray-50 outline-none border-none shadow-inner italic" onChange={e => setFormData({...formData, customer_name: e.target.value})} />
+            <input type="text" placeholder="현장명 (고객명)" value={formData.customer_name} className="p-4 rounded-2xl bg-gray-50 outline-none border-none shadow-inner" onChange={e => setFormData({...formData, customer_name: e.target.value})} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
-            <div className="p-6 bg-blue-50/50 rounded-[2rem] border-2 border-dashed border-blue-100">
-              <p className="text-[10px] font-black text-blue-800 mb-2 uppercase italic">📸 After Photos</p>
+            <div className="p-6 bg-blue-50/50 rounded-[2rem] border-2 border-dashed border-blue-100 uppercase italic font-black text-blue-800">
+              <p className="text-[10px] mb-2">📸 After Photos</p>
               <input type="file" id="after_imgs" multiple accept="image/*" className="text-[10px] w-full" />
             </div>
-            <div className="p-6 bg-red-50/50 rounded-[2rem] border-2 border-dashed border-red-100">
-              <p className="text-[10px] font-black text-red-800 mb-2 uppercase italic">📸 AS Photos</p>
+            <div className="p-6 bg-red-50/50 rounded-[2rem] border-2 border-dashed border-red-100 uppercase italic font-black text-red-800">
+              <p className="text-[10px] mb-2">📸 AS Photos</p>
               <input type="file" id="as_imgs" multiple accept="image/*" className="text-[10px] w-full" />
             </div>
           </div>
-          <textarea placeholder="특이사항 및 메모" className="w-full p-5 rounded-[2rem] bg-gray-50 h-32 outline-none border-none shadow-inner text-sm font-medium italic" onChange={e => setFormData({...formData, as_note: e.target.value})} />
-          <button type="submit" disabled={loading} className="w-full bg-blue-900 text-white p-6 rounded-[2.5rem] font-black text-xl shadow-2xl active:scale-95 transition-all uppercase italic">
-            {loading ? 'STORING...' : 'SUBMIT CASE'}
+          <textarea placeholder="메모 및 특이사항" className="w-full p-5 rounded-[2rem] bg-gray-50 h-32 outline-none border-none shadow-inner text-sm font-medium italic" onChange={e => setFormData({...formData, as_note: e.target.value})} />
+          <button type="submit" disabled={loading} className="w-full bg-blue-900 text-white p-6 rounded-[2.5rem] font-black text-xl shadow-2xl active:scale-95 transition-all italic">
+            {loading ? 'PROCESSING...' : 'SUBMIT CASE'}
           </button>
         </form>
       </details>
 
       <div className="mb-10 relative px-2">
-        <input type="text" placeholder="현장명 검색..." className="w-full p-5 pl-14 rounded-[2.5rem] border-none shadow-sm text-sm outline-none bg-white focus:ring-2 focus:ring-blue-100 transition-all font-medium" onChange={e => setSearchTerm(e.target.value)} />
+        <input type="text" placeholder="현장명 검색..." className="w-full p-5 pl-14 rounded-[2.5rem] border-none shadow-sm text-sm outline-none bg-white focus:ring-2 focus:ring-blue-100" onChange={e => setSearchTerm(e.target.value)} />
         <span className="absolute left-8 top-7 text-gray-300 text-xl font-light">🔍</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
         {filteredProjects.map((p) => (
-          <div key={p.id} onClick={() => openDetail(p)} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer border border-white group flex flex-col">
+          <div key={p.id} onClick={() => openDetail(p)} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer border border-white group flex flex-col animate-in fade-in duration-500">
             <div className="h-64 overflow-hidden relative bg-gray-100">
               {p.after_urls?.[0] ? <img src={p.after_urls[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-[10px] font-black uppercase italic tracking-widest">No Photo</div>}
               <div className="absolute top-5 left-5 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-blue-900 shadow-sm uppercase">{p.work_date}</div>
             </div>
             <div className="p-8 flex-1 flex flex-col font-black italic">
-              <h3 className="text-2xl text-gray-800 mb-1 leading-tight uppercase group-hover:text-blue-900">{p.customer_name || '미등록'}</h3>
+              <h3 className="text-2xl text-gray-800 mb-1 leading-tight uppercase group-hover:text-blue-900 transition-colors">{p.customer_name || '미등록'}</h3>
               <p className="text-xs text-blue-500 mb-4 uppercase tracking-tighter">By {p.installer_name?.split('@')[0]}</p>
-              <div className="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center text-[11px] font-black italic uppercase tracking-widest">
+              <div className="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center text-[11px] font-black uppercase italic tracking-widest">
                 <p className="text-gray-400 truncate flex-1 mr-4">{p.product_name || 'Detail'}</p>
                 <span className="text-blue-600 whitespace-nowrap">View →</span>
               </div>
@@ -251,7 +249,7 @@ export default function HaudArchiveApp() {
                 <div className="flex flex-col gap-1.5 uppercase tracking-widest"><label className="text-[10px] text-blue-400 ml-1">Manager</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner" value={editData.manager || ''} onChange={e => setEditData({...editData, manager: e.target.value})} /></div>
                 <div className="flex flex-col gap-1.5 uppercase tracking-widest"><label className="text-[10px] font-black text-blue-400 ml-1">Tags</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner italic" value={editData.tags || ''} onChange={e => setEditData({...editData, tags: e.target.value})} /></div>
                 <div className="flex gap-3 mt-auto pt-10 font-black">
-                  <button onClick={saveUpdate} disabled={loading} className="flex-[3] bg-blue-900 text-white p-6 rounded-[1.8rem] font-black shadow-xl uppercase transition-all active:scale-95">Update</button>
+                  <button onClick={saveUpdate} disabled={loading} className="flex-[3] bg-blue-900 text-white p-6 rounded-[1.8rem] shadow-xl active:scale-95 transition-all uppercase">Save Changes</button>
                   <button onClick={deleteProject} className="flex-1 bg-red-50 text-red-600 p-6 rounded-[1.8rem] hover:bg-red-600 hover:text-white transition-all shadow-sm uppercase text-[10px]">Delete</button>
                 </div>
               </div>
@@ -260,7 +258,7 @@ export default function HaudArchiveApp() {
         </div>
       )}
 
-      {/* 이미지 슬라이더 (모달 위 모달) */}
+      {/* 이미지 슬라이더 */}
       {modalData.isOpen && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in" onClick={closePhotoModal}>
           <button className="absolute top-8 right-8 text-white text-5xl font-light hover:rotate-90 transition-all" onClick={closePhotoModal}>&times;</button>
