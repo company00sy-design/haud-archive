@@ -11,11 +11,10 @@ export default function HaudArchiveApp() {
   const [password, setPassword] = useState('')
   const [projects, setProjects] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [modalData, setModalData] = useState({ isOpen: false, images: [], currentIndex: 0 });
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [editData, setEditData] = useState({})
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [modalData, setModalData] = useState({ isOpen: false, images: [], currentIndex: 0 })
 
   const [formData, setFormData] = useState({
     work_date: new Date().toISOString().split('T')[0],
@@ -40,13 +39,13 @@ export default function HaudArchiveApp() {
       const { data, error } = await supabase.from('projects').select('*').order('work_date', { ascending: false })
       if (error) throw error
       setProjects(data || [])
-    } catch (err) { console.error(err) }
+    } catch (err) { console.error("데이터 로드 실패:", err.message) }
   }
 
   const handleLogin = async (e) => {
     e.preventDefault()
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) alert('로그인 실패')
+    if (error) alert('로그인 실패: ' + error.message)
     else {
       setUser(data.user)
       setIsAdmin(data.user.user_metadata?.role === 'admin' || data.user.app_metadata?.role === 'admin')
@@ -65,44 +64,57 @@ export default function HaudArchiveApp() {
         if (error) throw error
         const { data: { publicUrl } } = supabase.storage.from('Photos').getPublicUrl(data.path)
         urls.push(publicUrl)
-      } catch (err) { console.error(err) }
+      } catch (err) { console.error("사진 업로드 중 오류:", err) }
     }
     return urls
   }
 
+  // [핵심] 등록 로직: 빈 값이라도 형식을 갖춰서 전송
   const handleSubmit = async (e) => {
     e.preventDefault()
     if(!formData.customer_name) return alert('현장명을 입력해주세요.');
     setLoading(true)
     try {
-      const afterUrls = await uploadImages(document.getElementById('after_imgs')?.files, 'after');
-      const asUrls = await uploadImages(document.getElementById('as_imgs')?.files, 'as');
+      const afterFiles = document.getElementById('after_imgs')?.files;
+      const asFiles = document.getElementById('as_imgs')?.files;
+      
+      const afterUrls = await uploadImages(afterFiles, 'after');
+      const asUrls = await uploadImages(asFiles, 'as');
       
       const { error } = await supabase.from('projects').insert([{
-        ...formData,
+        work_date: formData.work_date,
+        customer_name: formData.customer_name,
+        manager: formData.manager,
+        product_name: formData.product_name,
+        tags: formData.tags,
+        as_note: formData.as_note,
         installer_id: user.id,
         installer_name: user.email,
+        // 사진이 없으면 빈 배열 [] 로 JSON 형식을 맞춰줍니다.
         after_urls: afterUrls.length > 0 ? afterUrls : [],
         as_urls: asUrls.length > 0 ? asUrls : []
       }])
+
       if (error) throw error
-      alert('등록 성공!');
+      alert('성공적으로 등록되었습니다!');
       window.location.reload(); 
-    } catch (err) { alert('등록 실패: ' + err.message); }
-    finally { setLoading(false) }
+    } catch (err) { 
+      alert('등록 실패: ' + err.message);
+    } finally { setLoading(false) }
   }
 
-  const openDetail = (project) => { setSelectedProject(project); setEditData({ ...project }); setIsDetailOpen(true); }
-  const openPhotoModal = (images, index) => setModalData({ isOpen: true, images, currentIndex: index });
-  const closePhotoModal = () => setModalData({ ...modalData, isOpen: false });
-  const prevImg = (e) => { e.stopPropagation(); setModalData(prev => ({ ...prev, currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length })) }
-  const nextImg = (e) => { e.stopPropagation(); setModalData(prev => ({ ...prev, currentIndex: (prev.currentIndex + 1) % prev.images.length })) }
+  const openDetail = (project) => { 
+    setSelectedProject(project); 
+    setEditData({ ...project }); 
+    setIsDetailOpen(true); 
+  }
 
   const saveUpdate = async () => {
     if (!selectedProject?.id) return alert("ID 미확인");
     setLoading(true);
     try {
-      const extraUrls = await uploadImages(document.getElementById('extra_imgs')?.files, 'after');
+      const extraFiles = document.getElementById('extra_imgs')?.files;
+      const extraUrls = await uploadImages(extraFiles, 'after');
       const updatedAfterUrls = [...(editData.after_urls || []), ...extraUrls];
       
       const { error } = await supabase.from('projects').update({
@@ -122,36 +134,40 @@ export default function HaudArchiveApp() {
   }
 
   const deleteProject = async () => {
-    if (!confirm("삭제하시겠습니까?")) return;
+    if (!confirm("정말 삭제하시겠습니까?")) return;
     const { error } = await supabase.from('projects').delete().eq('id', selectedProject.id);
     if (!error) { alert('삭제 완료'); setIsDetailOpen(false); fetchProjects(); }
   }
 
   const filteredProjects = projects.filter(p => (p.customer_name || "").toLowerCase().includes(searchTerm.toLowerCase()))
+  const openPhotoModal = (images, index) => setModalData({ isOpen: true, images, currentIndex: index });
+  const closePhotoModal = () => setModalData({ ...modalData, isOpen: false });
+  const prevImg = (e) => { e.stopPropagation(); setModalData(prev => ({ ...prev, currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length })) }
+  const nextImg = (e) => { e.stopPropagation(); setModalData(prev => ({ ...prev, currentIndex: (prev.currentIndex + 1) % prev.images.length })) }
 
   if (!user) {
     return (
-      <main className="max-w-md mx-auto p-10 flex flex-col justify-center min-h-screen bg-white font-black italic tracking-tighter">
-        <h1 className="text-4xl text-blue-900 mb-8 text-center uppercase">hAUD ARCHIVE</h1>
+      <main className="max-w-md mx-auto p-10 flex flex-col justify-center min-h-screen bg-white">
+        <h1 className="text-4xl font-black text-blue-900 mb-8 uppercase italic text-center italic tracking-tighter">hAUD ARCHIVE</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <input type="email" placeholder="Email" className="w-full p-4 border rounded-2xl bg-gray-50 outline-none" onChange={e => setEmail(e.target.value)} />
           <input type="password" placeholder="Password" className="w-full p-4 border rounded-2xl bg-gray-50 outline-none" onChange={e => setPassword(e.target.value)} />
-          <button className="w-full bg-blue-900 text-white p-5 rounded-2xl text-lg uppercase">Login</button>
+          <button className="w-full bg-blue-900 text-white p-5 rounded-2xl font-black text-lg">LOGIN</button>
         </form>
       </main>
     )
   }
 
   return (
-    <main className="max-w-6xl mx-auto p-4 md:p-10 bg-gray-50 min-h-screen pb-20 font-sans text-gray-900">
-      <header className="flex justify-between items-end mb-10 py-4 border-b-2 border-gray-100 font-black italic tracking-tighter">
+    <main className="max-w-6xl mx-auto p-4 md:p-10 bg-gray-50 min-h-screen pb-20 font-sans text-gray-900 transition-all">
+      <header className="flex justify-between items-end mb-10 py-4 border-b-2 border-gray-100 px-2 font-black italic tracking-tighter">
         <div>
           <h1 className="text-3xl text-blue-900 uppercase">hAUD ARCHIVE</h1>
           <p className={`text-[11px] px-3 py-1 rounded-full inline-block mt-2 ${isAdmin ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
              {isAdmin ? 'ADMIN MODE' : `${user.email.split('@')[0]} WORKER`}
           </p>
         </div>
-        <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="text-[10px] text-gray-400 hover:text-red-500 uppercase pb-1 border-b">Logout</button>
+        <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="text-[10px] text-gray-400 hover:text-red-500 uppercase tracking-widest pb-1 border-b">Logout</button>
       </header>
 
       {/* 등록 섹션 */}
@@ -161,9 +177,9 @@ export default function HaudArchiveApp() {
           <span className="text-[10px] text-blue-500 tracking-widest uppercase">Open</span>
         </summary>
         <form onSubmit={handleSubmit} className="mt-8 space-y-6 pt-8 border-t border-gray-100 text-left px-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="date" value={formData.work_date} className="p-4 rounded-2xl bg-gray-50 font-black outline-none border-none shadow-inner" onChange={e => setFormData({...formData, work_date: e.target.value})} />
-            <input type="text" placeholder="현장명 (고객명)" value={formData.customer_name} className="p-4 rounded-2xl bg-gray-50 font-black outline-none border-none shadow-inner italic" onChange={e => setFormData({...formData, customer_name: e.target.value})} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-black">
+            <input type="date" value={formData.work_date} className="p-4 rounded-2xl bg-gray-50 outline-none border-none shadow-inner" onChange={e => setFormData({...formData, work_date: e.target.value})} />
+            <input type="text" placeholder="현장명 (고객명)" value={formData.customer_name} className="p-4 rounded-2xl bg-gray-50 outline-none border-none shadow-inner italic" onChange={e => setFormData({...formData, customer_name: e.target.value})} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
             <div className="p-6 bg-blue-50/50 rounded-[2rem] border-2 border-dashed border-blue-100">
@@ -177,12 +193,11 @@ export default function HaudArchiveApp() {
           </div>
           <textarea placeholder="특이사항 및 메모" className="w-full p-5 rounded-[2rem] bg-gray-50 h-32 outline-none border-none shadow-inner text-sm font-medium italic" onChange={e => setFormData({...formData, as_note: e.target.value})} />
           <button type="submit" disabled={loading} className="w-full bg-blue-900 text-white p-6 rounded-[2.5rem] font-black text-xl shadow-2xl active:scale-95 transition-all uppercase italic">
-            {loading ? 'Processing...' : 'Submit Case'}
+            {loading ? 'STORING...' : 'SUBMIT CASE'}
           </button>
         </form>
       </details>
 
-      {/* 검색 및 리스트 */}
       <div className="mb-10 relative px-2">
         <input type="text" placeholder="현장명 검색..." className="w-full p-5 pl-14 rounded-[2.5rem] border-none shadow-sm text-sm outline-none bg-white focus:ring-2 focus:ring-blue-100 transition-all font-medium" onChange={e => setSearchTerm(e.target.value)} />
         <span className="absolute left-8 top-7 text-gray-300 text-xl font-light">🔍</span>
@@ -226,7 +241,7 @@ export default function HaudArchiveApp() {
                     <img key={i} src={url} onClick={() => openPhotoModal([...(selectedProject.after_urls || []), ...(selectedProject.as_urls || [])], i)} className="w-full h-40 object-cover rounded-[1.5rem] border-4 border-gray-50 shadow-sm cursor-zoom-in hover:scale-105 transition-all" />
                   ))}
                 </div>
-                <div className="p-6 bg-blue-50/50 rounded-[1.5rem] border-2 border-dashed border-blue-100 text-center text-[10px] text-blue-800">
+                <div className="p-6 bg-blue-50/50 rounded-[1.5rem] border-2 border-dashed border-blue-100 text-center text-[10px] font-black text-blue-800">
                   <p className="mb-2 uppercase tracking-widest">➕ Add Photos</p>
                   <input type="file" id="extra_imgs" multiple accept="image/*" className="w-full" />
                 </div>
@@ -234,9 +249,9 @@ export default function HaudArchiveApp() {
               <div className="flex flex-col space-y-6">
                 <div className="flex flex-col gap-1.5 uppercase tracking-widest"><label className="text-[10px] text-blue-400 ml-1">Product</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner" value={editData.product_name || ''} onChange={e => setEditData({...editData, product_name: e.target.value})} /></div>
                 <div className="flex flex-col gap-1.5 uppercase tracking-widest"><label className="text-[10px] text-blue-400 ml-1">Manager</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner" value={editData.manager || ''} onChange={e => setEditData({...editData, manager: e.target.value})} /></div>
-                <div className="flex flex-col gap-1.5 uppercase tracking-widest"><label className="text-[10px] text-blue-400 ml-1">Tags</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner italic" value={editData.tags || ''} onChange={e => setEditData({...editData, tags: e.target.value})} /></div>
+                <div className="flex flex-col gap-1.5 uppercase tracking-widest"><label className="text-[10px] font-black text-blue-400 ml-1">Tags</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner italic" value={editData.tags || ''} onChange={e => setEditData({...editData, tags: e.target.value})} /></div>
                 <div className="flex gap-3 mt-auto pt-10 font-black">
-                  <button onClick={saveUpdate} disabled={loading} className="flex-[3] bg-blue-900 text-white p-6 rounded-[1.8rem] shadow-xl uppercase transition-all active:scale-95">Update</button>
+                  <button onClick={saveUpdate} disabled={loading} className="flex-[3] bg-blue-900 text-white p-6 rounded-[1.8rem] font-black shadow-xl uppercase transition-all active:scale-95">Update</button>
                   <button onClick={deleteProject} className="flex-1 bg-red-50 text-red-600 p-6 rounded-[1.8rem] hover:bg-red-600 hover:text-white transition-all shadow-sm uppercase text-[10px]">Delete</button>
                 </div>
               </div>
@@ -249,12 +264,12 @@ export default function HaudArchiveApp() {
       {modalData.isOpen && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in" onClick={closePhotoModal}>
           <button className="absolute top-8 right-8 text-white text-5xl font-light hover:rotate-90 transition-all" onClick={closePhotoModal}>&times;</button>
-          <button className="absolute left-6 md:left-12 text-white/40 hover:text-white text-7xl p-2 transition-all font-light" onClick={prevImg}>&#8249;</button>
+          <button className="absolute left-6 text-white/40 hover:text-white text-7xl p-2 transition-all font-light" onClick={prevImg}>&#8249;</button>
           <div className="max-w-[85%] max-h-[80%] flex flex-col items-center">
-            <img src={modalData.images[modalData.currentIndex]} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+            <img src={modalData.images[modalData.currentIndex]} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/10" onClick={(e) => e.stopPropagation()} />
             <p className="text-white font-black text-xs mt-8 italic tracking-[0.5em]">{modalData.currentIndex + 1} / {modalData.images.length}</p>
           </div>
-          <button className="absolute right-6 md:right-12 text-white/40 hover:text-white text-7xl p-2 transition-all font-light" onClick={nextImg}>&#8250;</button>
+          <button className="absolute right-6 text-white/40 hover:text-white text-7xl p-2 transition-all font-light" onClick={nextImg}>&#8250;</button>
         </div>
       )}
     </main>
