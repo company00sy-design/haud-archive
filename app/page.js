@@ -151,68 +151,70 @@ export default function HaudArchiveApp() {
     <div className="bg-gray-50 min-h-screen font-sans selection:bg-blue-100">
       <style jsx global>{` @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css'); body { font-family: 'Pretendard', sans-serif; } `}</style>
       
-      <main className="max-w-5xl mx-auto p-6 md:p-10 transition-all">
-        <header className="flex justify-between items-end mb-10 py-4 border-b-2 border-gray-200 px-2 font-black tracking-tighter">
+      {/* PC 환경에서 더 넓게 보이도록 max-w-7xl로 확장 */}
+      <main className="max-w-7xl mx-auto p-6 md:p-12 transition-all">
+        <header className="flex justify-between items-end mb-12 py-6 border-b-2 border-gray-200 px-2 font-black tracking-tighter">
           <div>
-            <h1 className="text-3xl text-blue-900 uppercase">하우드 아카이브</h1>
-            <p className={`text-[10px] px-3 py-1 rounded-full inline-block mt-2 ${isAdmin ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+            <h1 className="text-4xl text-blue-900 uppercase">하우드 아카이브</h1>
+            <p className={`text-xs px-4 py-1.5 rounded-full inline-block mt-3 ${isAdmin ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-gray-200 text-gray-600'}`}>
                {isAdmin ? '관리자 모드' : `${user.email.split('@')[0]} 기사님`}
             </p>
           </div>
-          <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="text-xs font-bold text-gray-400 hover:text-red-500 pb-1 border-b">로그아웃</button>
+          <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="text-sm font-bold text-gray-400 hover:text-red-500 pb-1 border-b-2 border-transparent hover:border-red-200 transition-all">로그아웃</button>
         </header>
 
-        <details className="bg-white p-6 rounded-[2.5rem] shadow-sm mb-12 border border-blue-50 overflow-hidden">
+        <details className="bg-white p-8 rounded-[3rem] shadow-sm mb-16 border border-blue-50 overflow-hidden transition-all">
           <summary className="font-bold text-blue-900 cursor-pointer list-none flex justify-between items-center py-2 px-2 focus:outline-none uppercase font-black">
-            <span className="text-lg">➕ 신규 시공 사례 등록</span>
-            <span className="text-[10px] text-blue-500 tracking-widest font-bold bg-blue-50 px-3 py-1 rounded-full">열기</span>
+            <span className="text-xl">➕ 신규 시공 사례 등록</span>
+            <span className="text-xs text-blue-500 font-black bg-blue-50 px-4 py-2 rounded-full tracking-widest">열기</span>
           </summary>
-          <form onSubmit={handleSubmit} className="mt-8 space-y-6 pt-8 border-t border-gray-100 text-left px-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-black">
-              <div className="flex flex-col gap-2">
-                <label className="text-xs text-gray-400 ml-2">시공 날짜</label>
-                <input type="date" value={formData.work_date} className="p-4 rounded-2xl bg-gray-50 outline-none border-none shadow-inner" onChange={e => setFormData({...formData, work_date: e.target.value})} />
+          <form onSubmit={handleSubmit} className="mt-10 space-y-8 pt-10 border-t border-gray-100 text-left px-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-black">
+              <div className="flex flex-col gap-3">
+                <label className="text-sm text-gray-400 ml-2">시공 날짜</label>
+                <input type="date" value={formData.work_date} className="p-5 rounded-[1.5rem] bg-gray-50 outline-none border-none shadow-inner text-lg" onChange={e => setFormData({...formData, work_date: e.target.value})} />
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-xs text-gray-400 ml-2">현장명 (고객명)</label>
-                <input type="text" placeholder="현장명을 입력해 주세요" value={formData.customer_name} className="p-4 rounded-2xl bg-gray-50 outline-none border-none shadow-inner" onChange={e => setFormData({...formData, customer_name: e.target.value})} />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center font-black">
-              <div className="p-6 bg-blue-50/50 rounded-[2rem] border-2 border-dashed border-blue-100">
-                <p className="text-xs text-blue-800 mb-2 uppercase">📸 완료 사진</p>
-                <input type="file" id="after_imgs" multiple accept="image/*" className="text-xs w-full" />
-              </div>
-              <div className="p-6 bg-red-50/50 rounded-[2rem] border-2 border-dashed border-red-100">
-                <p className="text-xs text-red-800 mb-2 uppercase">📸 AS 사진</p>
-                <input type="file" id="as_imgs" multiple accept="image/*" className="text-xs w-full" />
+              <div className="flex flex-col gap-3">
+                <label className="text-sm text-gray-400 ml-2">현장명 (고객명)</label>
+                <input type="text" placeholder="현장명을 입력해 주세요" value={formData.customer_name} className="p-5 rounded-[1.5rem] bg-gray-50 outline-none border-none shadow-inner text-lg" onChange={e => setFormData({...formData, customer_name: e.target.value})} />
               </div>
             </div>
-            <textarea placeholder="메모 및 특이사항" className="w-full p-5 rounded-[2rem] bg-gray-50 h-32 outline-none border-none shadow-inner text-sm font-black" onChange={e => setFormData({...formData, as_note: e.target.value})} />
-            <button type="submit" disabled={loading} className="w-full bg-blue-900 text-white p-6 rounded-[2.5rem] font-black text-xl shadow-2xl active:scale-95 transition-all">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center font-black">
+              <div className="p-10 bg-blue-50/50 rounded-[2.5rem] border-2 border-dashed border-blue-100 transition-all hover:bg-blue-50">
+                <p className="text-sm text-blue-800 mb-3 uppercase">📸 시공 완료 사진</p>
+                <input type="file" id="after_imgs" multiple accept="image/*" className="text-sm w-full" />
+              </div>
+              <div className="p-10 bg-red-50/50 rounded-[2.5rem] border-2 border-dashed border-red-100 transition-all hover:bg-red-50">
+                <p className="text-sm text-red-800 mb-3 uppercase">📸 AS 사진</p>
+                <input type="file" id="as_imgs" multiple accept="image/*" className="text-sm w-full" />
+              </div>
+            </div>
+            <textarea placeholder="기사님 전달사항 또는 특이사항을 상세히 입력해 주세요" className="w-full p-6 rounded-[2.5rem] bg-gray-50 h-48 outline-none border-none shadow-inner text-lg font-black" onChange={e => setFormData({...formData, as_note: e.target.value})} />
+            <button type="submit" disabled={loading} className="w-full bg-blue-900 text-white p-7 rounded-[2.5rem] font-black text-2xl shadow-2xl active:scale-95 transition-all">
               {loading ? '전송 중...' : '시공 데이터 기록 완료'}
             </button>
           </form>
         </details>
 
-        <div className="mb-10 relative px-2">
-          <input type="text" placeholder="현장명, 제품명, 태그, 담당자 검색..." className="w-full p-6 pl-14 rounded-[2.5rem] border-none shadow-md text-sm outline-none bg-white focus:ring-2 focus:ring-blue-100 transition-all font-black" onChange={e => setSearchTerm(e.target.value)} />
-          <span className="absolute left-8 top-7 text-gray-300 text-xl">🔍</span>
+        <div className="mb-16 relative px-2">
+          <input type="text" placeholder="현장명, 제품명, 태그, 기사님 성함으로 검색..." className="w-full p-7 pl-16 rounded-[2.5rem] border-none shadow-lg text-lg outline-none bg-white focus:ring-4 focus:ring-blue-100 transition-all font-black" onChange={e => setSearchTerm(e.target.value)} />
+          <span className="absolute left-9 top-8 text-gray-300 text-2xl">🔍</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
+        {/* 그리드 간격 확장 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 px-2">
           {filteredProjects.map((p) => (
-            <div key={p.id} onClick={() => openDetail(p)} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer border border-white group flex flex-col font-black">
-              <div className="h-64 overflow-hidden relative bg-gray-100">
-                {p.after_urls?.[0] ? <img src={p.after_urls[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs uppercase font-black">사진 없음</div>}
-                <div className="absolute top-5 left-5 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] text-blue-900 shadow-sm">{p.work_date}</div>
+            <div key={p.id} onClick={() => openDetail(p)} className="bg-white rounded-[3.5rem] overflow-hidden shadow-md hover:shadow-2xl transition-all cursor-pointer border border-white group flex flex-col font-black">
+              <div className="h-80 overflow-hidden relative bg-gray-100">
+                {p.after_urls?.[0] ? <img src={p.after_urls[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm uppercase font-black">사진 없음</div>}
+                <div className="absolute top-7 left-7 bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-xs text-blue-900 shadow-sm">{p.work_date}</div>
               </div>
-              <div className="p-8 flex-1 flex flex-col">
-                <h3 className="text-2xl text-gray-800 mb-1 tracking-tighter leading-tight uppercase group-hover:text-blue-900 transition-colors">{p.customer_name}</h3>
-                <p className="text-xs text-blue-500 mb-4 uppercase">시공: {p.installer_name?.split('@')[0]}</p>
-                <div className="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center">
-                  <p className="text-gray-400 text-[11px] truncate flex-1 mr-4">{p.product_name || 'Detail'}</p>
-                  <span className="text-blue-600 text-xs whitespace-nowrap">VIEW →</span>
+              <div className="p-10 flex-1 flex flex-col">
+                <h3 className="text-3xl text-gray-800 mb-2 tracking-tighter leading-tight uppercase group-hover:text-blue-900 transition-colors">{p.customer_name}</h3>
+                <p className="text-sm text-blue-500 mb-6 uppercase tracking-tighter">시공 담당: {p.installer_name?.split('@')[0]}</p>
+                <div className="mt-auto pt-7 border-t border-gray-100 flex justify-between items-center">
+                  <p className="text-gray-400 text-sm truncate flex-1 mr-4">{p.product_name || '상세 내역 없음'}</p>
+                  <span className="text-blue-600 text-sm whitespace-nowrap font-black">자세히 보기 →</span>
                 </div>
               </div>
             </div>
@@ -220,41 +222,40 @@ export default function HaudArchiveApp() {
         </div>
       </main>
 
-      {/* 상세 보기 모달 */}
+      {/* 상세 보기 모달 - PC에서 더 크게 보이도록 max-w-6xl로 확장 */}
       {isDetailOpen && selectedProject && (
-        <div className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in" onClick={() => setIsDetailOpen(false)}>
-          <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="p-8 md:p-12 border-b flex justify-between items-start sticky top-0 bg-white z-10 font-black">
-              <div className="flex flex-col gap-1 w-full">
-                <span className="text-xs text-blue-400 tracking-widest">시공 상세 내역</span>
-                {/* [핵심 수정] 고객명 레이블과 입력창 폰트 크기 및 높이 통일 */}
-                <div className="flex items-center gap-3 mt-1 w-full group">
-                   <span className="text-3xl text-gray-400 whitespace-nowrap">고객명 :</span>
-                   <input className="block text-3xl font-black bg-transparent border-b-2 border-blue-50 outline-none flex-1 tracking-tighter transition-colors focus:border-blue-500" value={editData.customer_name || ''} onChange={e => setEditData({...editData, customer_name: e.target.value})} />
+        <div className="fixed inset-0 z-[150] bg-black/85 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in" onClick={() => setIsDetailOpen(false)}>
+          <div className="bg-white w-full max-w-6xl rounded-[4rem] shadow-2xl overflow-hidden relative max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-10 md:p-14 border-b flex justify-between items-start sticky top-0 bg-white z-10 font-black">
+              <div className="flex flex-col gap-2 w-full">
+                <span className="text-sm text-blue-400 tracking-widest font-black">하우드 시공 상세 기록</span>
+                <div className="flex items-center gap-4 mt-2 w-full group">
+                   <span className="text-4xl text-gray-300 whitespace-nowrap">고객명 :</span>
+                   <input className="block text-4xl font-black bg-transparent border-b-4 border-blue-50 outline-none flex-1 tracking-tighter transition-colors focus:border-blue-500 py-1" value={editData.customer_name || ''} onChange={e => setEditData({...editData, customer_name: e.target.value})} />
                 </div>
               </div>
-              <button onClick={() => setIsDetailOpen(false)} className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center text-2xl text-gray-400 hover:text-black transition-all shadow-sm">&times;</button>
+              <button onClick={() => setIsDetailOpen(false)} className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center text-4xl text-gray-400 hover:text-black transition-all shadow-sm font-light hover:bg-gray-200">&times;</button>
             </div>
-            <div className="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-12 text-sm font-black">
-              <div className="space-y-6">
-                <p className="text-xs text-gray-300 tracking-widest uppercase">시공 사진</p>
-                <div className="grid grid-cols-2 gap-3">
+            <div className="p-10 md:p-14 grid grid-cols-1 lg:grid-cols-2 gap-16 text-sm font-black">
+              <div className="space-y-8">
+                <p className="text-sm text-gray-300 tracking-[0.2em] uppercase font-black">시공 현장 갤러리</p>
+                <div className="grid grid-cols-2 gap-5">
                   {[...(selectedProject.after_urls || []), ...(selectedProject.as_urls || [])].map((url, i) => (
-                    <img key={url} src={url} onClick={() => openPhotoModal([...(selectedProject.after_urls || []), ...(selectedProject.as_urls || [])], i)} className="w-full h-40 object-cover rounded-[1.5rem] border-4 border-gray-50 shadow-sm cursor-zoom-in hover:scale-105 transition-all" />
+                    <img key={url} src={url} onClick={() => openPhotoModal([...(selectedProject.after_urls || []), ...(selectedProject.as_urls || [])], i)} className="w-full h-56 object-cover rounded-[2rem] border-4 border-gray-50 shadow-md cursor-zoom-in hover:scale-105 transition-all" />
                   ))}
                 </div>
-                <div className="p-6 bg-blue-50/50 rounded-[1.5rem] border-2 border-dashed border-blue-100 text-center text-xs text-blue-800">
-                  <p className="mb-2 uppercase">➕ 사진 추가 업로드</p>
+                <div className="p-10 bg-blue-50/50 rounded-[2.5rem] border-2 border-dashed border-blue-100 text-center text-sm font-black text-blue-800 transition-all hover:bg-blue-100">
+                  <p className="mb-3 uppercase tracking-widest">➕ 추가 사진 업로드</p>
                   <input type="file" id="extra_imgs" multiple accept="image/*" className="w-full" />
                 </div>
               </div>
-              <div className="flex flex-col space-y-6 font-black uppercase">
-                <div className="flex flex-col gap-1.5"><label className="text-xs text-blue-400 tracking-widest">시공 제품</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner" value={editData.product_name || ''} onChange={e => setEditData({...editData, product_name: e.target.value})} /></div>
-                <div className="flex flex-col gap-1.5"><label className="text-xs text-blue-400 tracking-widest">영업 담당</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner" value={editData.manager || ''} onChange={e => setEditData({...editData, manager: e.target.value})} /></div>
-                <div className="flex flex-col gap-1.5"><label className="text-xs text-blue-400 tracking-widest">검색 태그</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-black outline-none border-none shadow-inner italic" value={editData.tags || ''} placeholder="쉼표로 구분" onChange={e => setEditData({...editData, tags: e.target.value})} /></div>
-                <div className="flex gap-3 mt-auto pt-10 font-black">
-                  <button onClick={saveUpdate} disabled={loading} className="flex-[3] bg-blue-900 text-white p-6 rounded-[1.8rem] shadow-xl shadow-blue-100 active:scale-95 transition-all uppercase">기록 수정 저장</button>
-                  <button onClick={deleteProject} className="flex-1 bg-red-50 text-red-600 p-6 rounded-[1.8rem] hover:bg-red-600 hover:text-white transition-all shadow-sm text-xs font-black uppercase">삭제</button>
+              <div className="flex flex-col space-y-8 font-black uppercase">
+                <div className="flex flex-col gap-3"><label className="text-xs text-blue-400 tracking-widest">시공 제품 정보</label><input className="w-full p-6 bg-gray-50 rounded-3xl font-black outline-none border-none shadow-inner text-xl" value={editData.product_name || ''} onChange={e => setEditData({...editData, product_name: e.target.value})} /></div>
+                <div className="flex flex-col gap-3"><label className="text-xs text-blue-400 tracking-widest">현장 영업 담당</label><input className="w-full p-6 bg-gray-50 rounded-3xl font-black outline-none border-none shadow-inner text-xl" value={editData.manager || ''} onChange={e => setEditData({...editData, manager: e.target.value})} /></div>
+                <div className="flex flex-col gap-3"><label className="text-xs text-blue-400 tracking-widest">검색 키워드 태그</label><input className="w-full p-6 bg-gray-50 rounded-3xl font-black outline-none border-none shadow-inner text-xl" value={editData.tags || ''} placeholder="쉼표로 구분 (예: 무몰딩, 푸시)" onChange={e => setEditData({...editData, tags: e.target.value})} /></div>
+                <div className="flex gap-5 mt-auto pt-16 font-black">
+                  <button onClick={saveUpdate} disabled={loading} className="flex-[3] bg-blue-900 text-white p-8 rounded-[2.5rem] shadow-2xl shadow-blue-200 active:scale-95 transition-all text-xl">기록 수정 완료</button>
+                  <button onClick={deleteProject} className="flex-1 bg-red-50 text-red-600 p-8 rounded-[2.5rem] hover:bg-red-600 hover:text-white transition-all shadow-sm text-sm uppercase">기록 삭제</button>
                 </div>
               </div>
             </div>
@@ -262,16 +263,16 @@ export default function HaudArchiveApp() {
         </div>
       )}
 
-      {/* 이미지 확대 슬라이더 */}
+      {/* 이미지 확대 슬라이더 - PC에서 훨씬 크게 보이도록 조정 */}
       {modalData.isOpen && (
-        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in" onClick={closePhotoModal}>
-          <button className="absolute top-8 right-8 text-white text-5xl font-light hover:rotate-90 transition-all font-light" onClick={closePhotoModal}>&times;</button>
-          <button className="absolute left-6 md:left-12 text-white/40 hover:text-white text-7xl p-2 transition-all font-light" onClick={prevImg}>&#8249;</button>
-          <div className="max-w-[85%] max-h-[80%] flex flex-col items-center font-black">
-            <img src={modalData.images[modalData.currentIndex]} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/10 shadow-blue-500/10" onClick={(e) => e.stopPropagation()} />
-            <p className="text-white font-black text-sm mt-8 tracking-widest">{modalData.currentIndex + 1} / {modalData.images.length}</p>
+        <div className="fixed inset-0 z-[200] bg-black/98 flex items-center justify-center animate-in fade-in duration-300" onClick={closePhotoModal}>
+          <button className="absolute top-10 right-10 text-white text-6xl font-light hover:rotate-90 transition-all font-light" onClick={closePhotoModal}>&times;</button>
+          <button className="absolute left-8 md:left-16 text-white/40 hover:text-white text-9xl p-4 transition-all font-light" onClick={prevImg}>&#8249;</button>
+          <div className="max-w-[92%] max-h-[88%] flex flex-col items-center font-black">
+            <img src={modalData.images[modalData.currentIndex]} className="max-w-full max-h-[85vh] object-contain rounded-3xl shadow-2xl border border-white/5" onClick={(e) => e.stopPropagation()} />
+            <p className="text-white font-black text-lg mt-10 tracking-[0.5em] bg-white/10 px-8 py-3 rounded-full">{modalData.currentIndex + 1} / {modalData.images.length}</p>
           </div>
-          <button className="absolute right-6 md:right-12 text-white/40 hover:text-white text-7xl p-2 transition-all font-light" onClick={nextImg}>&#8250;</button>
+          <button className="absolute right-8 md:right-16 text-white/40 hover:text-white text-9xl p-4 transition-all font-light" onClick={nextImg}>&#8250;</button>
         </div>
       )}
     </div>
