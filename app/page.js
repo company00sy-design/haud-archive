@@ -38,7 +38,7 @@ export default function HaudArchiveApp() {
     try {
       const { data, error } = await supabase.from('projects').select('*').order('work_date', { ascending: false })
       if (!error) setProjects(data || [])
-    } catch (err) { console.error("데이터 로드 실패") }
+    } catch (err) { console.error("로드 실패") }
   }
 
   const handleLogin = async (e) => {
@@ -205,10 +205,10 @@ export default function HaudArchiveApp() {
             <div key={p.id} onClick={() => openDetail(p)} className="bg-white rounded-[3rem] overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer border border-white group flex flex-col">
               <div className="h-64 overflow-hidden relative bg-gray-100">
                 {p.after_urls?.[0] ? <img src={p.after_urls[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs font-black">사진 없음</div>}
-                <div className="absolute top-5 left-5 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-blue-900 shadow-sm">{p.work_date}</div>
+                <div className="absolute top-5 left-5 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-blue-900 shadow-sm uppercase">{p.work_date}</div>
               </div>
               <div className="p-8 flex-1 flex flex-col">
-                <h3 className="text-2xl font-black text-gray-900 mb-1 tracking-tighter leading-tight group-hover:text-blue-900 transition-colors">{p.customer_name}</h3>
+                <h3 className="text-2xl font-black text-gray-800 mb-1 tracking-tighter leading-tight group-hover:text-blue-900 transition-colors">{p.customer_name}</h3>
                 <p className="text-xs font-bold text-blue-500 mb-4 uppercase">시공: {p.installer_name?.split('@')[0]}</p>
                 <div className="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center font-bold">
                   <p className="text-gray-400 text-[11px] truncate flex-1 mr-4">{p.product_name || '기본 정보'}</p>
@@ -220,35 +220,39 @@ export default function HaudArchiveApp() {
         </div>
       </main>
 
+      {/* 상세 보기 모달 */}
       {isDetailOpen && selectedProject && (
         <div className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setIsDetailOpen(false)}>
           <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden relative max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="p-8 md:p-12 border-b flex justify-between items-start sticky top-0 bg-white z-10 font-bold">
               <div>
-                <span className="text-xs text-blue-400 font-black tracking-widest">시공 상세 내역</span>
-                <input className="block text-4xl font-black mt-2 bg-transparent border-b-2 border-blue-50 outline-none w-full tracking-tighter" value={editData.customer_name || ''} onChange={e => setEditData({...editData, customer_name: e.target.value})} />
+                <span className="text-xs text-blue-400 font-black tracking-widest uppercase">현장 상세 내역</span>
+                <div className="flex items-baseline gap-2 mt-2">
+                   <span className="text-xl font-bold text-gray-400">고객명 :</span>
+                   <input className="block text-4xl font-black bg-transparent border-b-2 border-blue-50 outline-none flex-1 tracking-tighter" value={editData.customer_name || ''} onChange={e => setEditData({...editData, customer_name: e.target.value})} />
+                </div>
               </div>
-              <button onClick={() => setIsDetailOpen(false)} className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center text-2xl text-gray-400 hover:text-black transition-all font-light">&times;</button>
+              <button onClick={() => setIsDetailOpen(false)} className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center text-2xl text-gray-400 hover:text-black transition-all shadow-sm">&times;</button>
             </div>
             <div className="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-12 text-sm font-bold">
               <div className="space-y-6">
-                <p className="text-xs text-gray-300 font-black tracking-widest">사진 갤러리</p>
+                <p className="text-xs text-gray-300 font-black tracking-widest uppercase">시공 사진</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[...(selectedProject.after_urls || []), ...(selectedProject.as_urls || [])].map((url, i) => (
                     <img key={url} src={url} onClick={() => openPhotoModal([...(selectedProject.after_urls || []), ...(selectedProject.as_urls || [])], i)} className="w-full h-40 object-cover rounded-[1.5rem] border-4 border-gray-50 shadow-sm cursor-zoom-in hover:scale-105 transition-all" />
                   ))}
                 </div>
                 <div className="p-6 bg-blue-50/50 rounded-[1.5rem] border-2 border-dashed border-blue-100 text-center text-xs font-black text-blue-800">
-                  <p className="mb-2">➕ 시공 사진 추가 업로드</p>
+                  <p className="mb-2 uppercase">➕ 사진 추가하기</p>
                   <input type="file" id="extra_imgs" multiple accept="image/*" className="w-full" />
                 </div>
               </div>
               <div className="flex flex-col space-y-6">
-                <div className="flex flex-col gap-1.5"><label className="text-xs font-black text-blue-400 uppercase tracking-widest">시공 제품명</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-bold outline-none border-none shadow-inner" value={editData.product_name || ''} onChange={e => setEditData({...editData, product_name: e.target.value})} /></div>
-                <div className="flex flex-col gap-1.5"><label className="text-xs font-black text-blue-400 uppercase tracking-widest">영업 담당자</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-bold outline-none border-none shadow-inner" value={editData.manager || ''} onChange={e => setEditData({...editData, manager: e.target.value})} /></div>
+                <div className="flex flex-col gap-1.5"><label className="text-xs font-black text-blue-400 uppercase tracking-widest">시공 제품</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-bold outline-none border-none shadow-inner" value={editData.product_name || ''} placeholder="시공 제품명" onChange={e => setEditData({...editData, product_name: e.target.value})} /></div>
+                <div className="flex flex-col gap-1.5"><label className="text-xs font-black text-blue-400 uppercase tracking-widest">영업 담당</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-bold outline-none border-none shadow-inner" value={editData.manager || ''} placeholder="담당자 성함" onChange={e => setEditData({...editData, manager: e.target.value})} /></div>
                 <div className="flex flex-col gap-1.5"><label className="text-xs font-black text-blue-400 uppercase tracking-widest">검색 태그</label><input className="w-full p-5 bg-gray-50 rounded-2xl font-bold outline-none border-none shadow-inner" value={editData.tags || ''} placeholder="쉼표로 구분하여 입력" onChange={e => setEditData({...editData, tags: e.target.value})} /></div>
                 <div className="flex gap-3 mt-auto pt-10 font-black transition-all">
-                  <button onClick={saveUpdate} disabled={loading} className="flex-[3] bg-blue-900 text-white p-6 rounded-[1.8rem] shadow-xl shadow-blue-100 active:scale-95 transition-all">기록 수정 저장</button>
+                  <button onClick={saveUpdate} disabled={loading} className="flex-[3] bg-blue-900 text-white p-6 rounded-[1.8rem] shadow-xl shadow-blue-100 active:scale-95 transition-all">수정 내용 저장</button>
                   <button onClick={deleteProject} className="flex-1 bg-red-50 text-red-600 p-6 rounded-[1.8rem] hover:bg-red-600 hover:text-white transition-all shadow-sm text-xs font-bold">삭제</button>
                 </div>
               </div>
@@ -257,6 +261,7 @@ export default function HaudArchiveApp() {
         </div>
       )}
 
+      {/* 이미지 확대 슬라이더 */}
       {modalData.isOpen && (
         <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in duration-300" onClick={closePhotoModal}>
           <button className="absolute top-8 right-8 text-white text-5xl font-light hover:rotate-90 transition-all" onClick={closePhotoModal}>&times;</button>
